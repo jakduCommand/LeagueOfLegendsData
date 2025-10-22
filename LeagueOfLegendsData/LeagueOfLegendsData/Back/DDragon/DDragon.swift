@@ -8,10 +8,4 @@ import Foundation
 
 class DDragon {
     
-    init() {
-    version = "Hello"
-    }
-    
-    private
-    let version: String
 }

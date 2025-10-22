@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct LeagueOfLegendsDataApp: App {
+    @StateObject private var mainVM = MainViewModel()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(mainVM)
         }
     }
 }
