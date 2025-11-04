@@ -9,12 +9,20 @@ import SwiftUI
 
 @main
 struct LeagueOfLegendsDataApp: App {
-    @StateObject private var mainVM = MainViewModel()
-    
+    init() {
+        let cache = URLCache (
+            memoryCapacity: 512 * 1024 * 1024,
+            diskCapacity: 1024 * 1024 * 1024
+        )
+        URLCache.shared = cache
+    }
+    @StateObject private var versionVM = VersionViewModel(service: VersionService())
+    @StateObject private var itemVM = ItemViewModel(service: ItemService())
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(mainVM)
+                .environmentObject(versionVM)
+                .environmentObject(itemVM)
         }
     }
 }
