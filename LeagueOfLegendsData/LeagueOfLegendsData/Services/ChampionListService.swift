@@ -10,7 +10,7 @@ protocol ChampionListServicing {
     func fetchChampionList(_ version: String) async throws -> ChampionListModel
 }
 
-struct ChampionListService {
+struct ChampionListService: ChampionListServicing {
     func fetchChampionList(_ version: String) async throws -> ChampionListModel {
         let urlString = "https://ddragon.leagueoflegends.com/cdn/\(version)/data/en_US/champion.json"
         guard let url = URL(string: urlString) else {

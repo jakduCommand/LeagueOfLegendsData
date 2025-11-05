@@ -18,11 +18,14 @@ struct LeagueOfLegendsDataApp: App {
     }
     @StateObject private var versionVM = VersionViewModel(service: VersionService())
     @StateObject private var itemVM = ItemViewModel(service: ItemService())
+    @StateObject private var championListVM = ChampionListViewModel(service: ChampionListService())
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(versionVM)
                 .environmentObject(itemVM)
+                .environmentObject(championListVM)
         }
     }
 }

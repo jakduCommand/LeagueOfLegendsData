@@ -27,9 +27,7 @@ struct HomeView: View {
             case "Items":
                 ItemView(version: version)
             case "Champions":
-                Text("Champion view coming soon")
-                    .font(.title)
-                    .foregroundColor(.secondary)
+                ChampionListView(version: version)
             case "Settings":
                 Text("Settings")
             default:
