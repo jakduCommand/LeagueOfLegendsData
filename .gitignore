@@ -1,4 +1,2 @@
-Config.plist
-
-# macOS system file
 .DS_Store
+/LeagueOfLegendsData/Config.plist

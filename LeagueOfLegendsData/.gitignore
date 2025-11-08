@@ -1,9 +1,0 @@
-# Git ignore for macOS/Xcode basics
-.DS_Store
-
-# Node: add common macOS metadata files
-.AppleDouble
-.LSOverride
-
-# Icon must end with two \r
-Icon
