@@ -29,7 +29,7 @@ struct HomeView: View {
             case "Champions":
                 ChampionListView(version: version)
             case "Settings":
-                Text("Settings")
+                APIKeyView()
             default:
                 ItemView(version: version)
             }
