@@ -19,6 +19,7 @@ struct LeagueOfLegendsDataApp: App {
     @StateObject private var versionVM = VersionViewModel(service: VersionService())
     @StateObject private var itemVM = ItemViewModel(service: ItemService())
     @StateObject private var championListVM = ChampionListViewModel(service: ChampionListService())
+    @StateObject private var leagueVM = LeagueViewModel(service: LeagueService())
     
     var body: some Scene {
         WindowGroup {
@@ -26,6 +27,7 @@ struct LeagueOfLegendsDataApp: App {
                 .environmentObject(versionVM)
                 .environmentObject(itemVM)
                 .environmentObject(championListVM)
+                .environmentObject(leagueVM)
         }
     }
 }

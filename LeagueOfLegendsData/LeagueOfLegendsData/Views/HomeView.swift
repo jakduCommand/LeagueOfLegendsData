@@ -18,6 +18,8 @@ struct HomeView: View {
                     .tag("Items")
                 Text("Champions")
                     .tag("Champions")
+                Text("Players")
+                    .tag("Players")
                 Text("Settings")
                     .tag("Settings")
             }
@@ -28,6 +30,8 @@ struct HomeView: View {
                 ItemView(version: version)
             case "Champions":
                 ChampionListView(version: version)
+            case "Players":
+                LeagueView()
             case "Settings":
                 APIKeyView()
             default:

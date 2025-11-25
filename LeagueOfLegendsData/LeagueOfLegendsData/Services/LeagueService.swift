@@ -7,7 +7,11 @@
 import Foundation
 
 protocol LeagueServicing {
-    func fetchLeague(_ server:String, _ league: String) async throws  -> LeagueListDTO
+    func fetchLeague(
+        _ server:String,
+        _ league: String,
+        _ queue: String
+    ) async throws  -> LeagueListDTO
     
     func fetchLeagueMineral(
         _ server: String,
@@ -19,8 +23,17 @@ protocol LeagueServicing {
 }
 
 struct LeagueService: LeagueServicing {
-    func fetchLeague(_ server: String, _ league: String) async throws -> LeagueListDTO {
-        guard let url = URL(string: "https://\(server).api.riotgames.com/lol/league/v4/\(league)/by-queue/RANKED_SOLO_5x5?api_key=RGAPI-08570661-85dd-41e3-9c5a-dc2e9ac4bb68") else {
+    func fetchLeague(
+        _ server: String,
+        _ league: String,
+        _ queue: String
+    ) async throws -> LeagueListDTO {
+        
+        guard let apiKey = KeychainService.load() else {
+            throw APIKeyError.missingKey
+        }
+        
+        guard let url = URL(string: "https://\(server).api.riotgames.com/lol/league/v4/\(league)/by-queue/\(queue)?api_key=\(apiKey)") else {
             throw URLError(.badURL)
         }
         
@@ -48,9 +61,16 @@ struct LeagueService: LeagueServicing {
         _ queue: String,
         _ page: Int
     ) async throws -> LeagueEntriesDTO {
-        guard let url = URL(string: "https://\(server).api.riotgames.com/lol/league/v4/entries/\(queue)/\(tier)/\(division)?page=\(page)&api_key=") else {
+        
+        guard let apiKey = KeychainService.load() else {
+            throw APIKeyError.missingKey
+        }
+        
+        guard let url = URL(string: "https://\(server).api.riotgames.com/lol/league/v4/entries/\(queue)/\(tier)/\(division)?page=\(page)&api_key=\(apiKey)") else {
             throw URLError(.badURL)
         }
+        
+        print(url)
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
