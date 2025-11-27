@@ -100,6 +100,23 @@ struct LeagueView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                
+                Button("Save") {
+                    if isTopTier {
+                        leagueVM.saveTopTierEntires(
+                            selectedServer.rawValue,
+                            selectedTier.rawValue,
+                            selectedQueue.rawValue
+                        )
+                    } else {
+                        leagueVM.saveEntries(
+                            selectedServer.rawValue,
+                            selectedDivision.rawValue,
+                            selectedTier.rawValue,
+                            selectedQueue.rawValue
+                        )
+                    }
+                }
             }
             .frame(minHeight: 70)
             .layoutPriority(1)

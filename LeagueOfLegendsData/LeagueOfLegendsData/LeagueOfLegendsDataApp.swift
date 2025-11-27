@@ -20,6 +20,7 @@ struct LeagueOfLegendsDataApp: App {
     @StateObject private var itemVM = ItemViewModel(service: ItemService())
     @StateObject private var championListVM = ChampionListViewModel(service: ChampionListService())
     @StateObject private var leagueVM = LeagueViewModel(service: LeagueService())
+    @StateObject private var fmVM = FileManagerViewModel()
     
     var body: some Scene {
         WindowGroup {
@@ -28,6 +29,16 @@ struct LeagueOfLegendsDataApp: App {
                 .environmentObject(itemVM)
                 .environmentObject(championListVM)
                 .environmentObject(leagueVM)
+                .environmentObject(fmVM)
+        }
+        .commands {
+            CommandGroup(after: .newItem) {
+                Divider()
+                Button("Open LeagueData Folder") {
+                    fmVM.openFolder()
+                }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+            }
         }
     }
 }

@@ -71,12 +71,4 @@ final class LeagueViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
-    
-    func saveEntries () {
-        
-    }
-    
-    func saveAllEntries () {
-        
-    }
 }

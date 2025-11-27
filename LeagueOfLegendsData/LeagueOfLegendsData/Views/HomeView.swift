@@ -22,6 +22,8 @@ struct HomeView: View {
                     .tag("Players")
                 Text("Settings")
                     .tag("Settings")
+                Text("Files")
+                    .tag("Files")
             }
             .navigationTitle("Home")
         } detail: {
@@ -34,6 +36,8 @@ struct HomeView: View {
                 LeagueView()
             case "Settings":
                 APIKeyView()
+            case "Files":
+                FileManagerView()
             default:
                 ItemView(version: version)
             }
