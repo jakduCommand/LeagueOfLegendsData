@@ -20,10 +20,12 @@ struct HomeView: View {
                     .tag("Champions")
                 Text("Players")
                     .tag("Players")
-                Text("Settings")
-                    .tag("Settings")
                 Text("Files")
                     .tag("Files")
+                Text("Test")
+                    .tag("Test")
+                Text("Settings")
+                    .tag("Settings")
             }
             .navigationTitle("Home")
         } detail: {
@@ -34,10 +36,12 @@ struct HomeView: View {
                 ChampionListView(version: version)
             case "Players":
                 LeagueView()
-            case "Settings":
-                APIKeyView()
             case "Files":
                 FileManagerView()
+            case "Test":
+                TestView()
+            case "Settings":
+                APIKeyView()
             default:
                 ItemView(version: version)
             }

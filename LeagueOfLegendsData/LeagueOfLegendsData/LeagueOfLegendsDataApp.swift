@@ -19,7 +19,7 @@ struct LeagueOfLegendsDataApp: App {
     @StateObject private var versionVM = VersionViewModel(service: VersionService())
     @StateObject private var itemVM = ItemViewModel(service: ItemService())
     @StateObject private var championListVM = ChampionListViewModel(service: ChampionListService())
-    @StateObject private var leagueVM = LeagueViewModel(service: LeagueService())
+    @StateObject private var leagueVM = LeagueViewModel(service: LeagueService(), fileService: LeagueFileService())
     @StateObject private var fmVM = FileManagerViewModel()
     
     var body: some Scene {

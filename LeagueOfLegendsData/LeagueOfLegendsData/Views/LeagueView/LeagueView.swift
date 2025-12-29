@@ -14,6 +14,8 @@ struct LeagueView: View {
     @State private var selectedServer: Server = .NA1
     @State private var selectedTier: Tier = .challenger
     @State private var selectedDivision: Division = .one
+    @State private var leagueListDTO: LeagueListDTO?
+    @State private var leagueEntriesDTO: LeagueEntriesDTO?
     @State private var pageText: String = "1"
     
     var page: Int { Int(pageText) ?? 1}
@@ -79,17 +81,17 @@ struct LeagueView: View {
                 
                 Button("Fetch") {
                     Task {
-                        leagueVM.leagueListDTO = nil
-                        leagueVM.leagueEntriesDTO = nil
+                        leagueListDTO = nil
+                        leagueEntriesDTO = nil
                         
                         if isTopTier {
-                            await leagueVM.getLeagueList(
+                            leagueListDTO = try await leagueVM.getLeagueList(
                                 selectedServer.rawValue,
                                 selectedLeague.rawValue,
                                 selectedQueue.rawValue
                             )
                         } else {
-                            await leagueVM.getLeagueEntries (
+                            leagueEntriesDTO = try await leagueVM.getLeagueEntries (
                                 selectedServer.rawValue,
                                 selectedDivision.rawValue,
                                 selectedTier.rawValue,
@@ -102,21 +104,23 @@ struct LeagueView: View {
                 .buttonStyle(.borderedProminent)
                 
                 Button("Save") {
-                    if isTopTier {
-                        leagueVM.saveTopTierEntires(
-                            selectedServer.rawValue,
-                            selectedTier.rawValue,
-                            selectedQueue.rawValue
-                        )
-                    } else {
-                        leagueVM.saveEntries(
-                            selectedServer.rawValue,
-                            selectedDivision.rawValue,
-                            selectedTier.rawValue,
-                            selectedQueue.rawValue
-                        )
+                    Task {
+                        if isTopTier {
+                            guard let leagueListDTO else { return }
+                            // TODO: save high tier(master - challenger)
+                        } else {
+                            guard let leagueEntriesDTO else { return }
+                            // TODO: save low tier(iron - diamond)
+                        }
                     }
                 }
+                
+                Button("Save All Pages") {
+                    Task {
+                        // TODO: Save all pages.
+                    }
+                }
+                .disabled(isTopTier)
             }
             .frame(minHeight: 70)
             .layoutPriority(1)
@@ -128,7 +132,7 @@ struct LeagueView: View {
             Spacer()
             // MARK: Display Results
             Group {
-                if let dto = leagueVM.leagueListDTO {
+                if let dto = leagueListDTO {
                     List {
                         Section("\(dto.tier) - \(dto.name)") {
                             Text("Server: \(selectedServer.rawValue) | Queue: \(dto.queue) | ID: \(dto.leagueId)")
@@ -143,7 +147,7 @@ struct LeagueView: View {
                     }
                     .listStyle(.plain)
                 }
-                else if let dto = leagueVM.leagueEntriesDTO {
+                else if let dto = leagueEntriesDTO {
                     List {
                         Section("\(selectedTier.display) - Page \(page)") {
                             ForEach(dto, id: \.puuid) { entry in
@@ -177,6 +181,5 @@ struct LeagueView: View {
             Spacer()
             
         }
-        
     }
 }

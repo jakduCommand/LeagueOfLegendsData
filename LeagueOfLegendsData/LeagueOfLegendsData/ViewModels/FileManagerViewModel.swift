@@ -21,13 +21,12 @@ final class FileManagerViewModel: ObservableObject {
         var modified: Date
     }
     
-    private var baseDirectory: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("LeagueData", isDirectory: true)
-    }
-    
     init() {
         loadFiles()
+    }
+    
+    func getBaseDirectory() -> URL {
+        return baseDirectory
     }
     
     func loadFiles() {

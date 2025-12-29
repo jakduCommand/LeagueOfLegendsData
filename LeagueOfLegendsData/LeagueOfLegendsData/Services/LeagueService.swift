@@ -23,6 +23,7 @@ protocol LeagueServicing {
 }
 
 struct LeagueService: LeagueServicing {
+    
     func fetchLeague(
         _ server: String,
         _ league: String,
@@ -46,7 +47,8 @@ struct LeagueService: LeagueServicing {
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
         }
         
@@ -87,5 +89,29 @@ struct LeagueService: LeagueServicing {
         
         let decoder = JSONDecoder()
         return try decoder.decode(LeagueEntriesDTO.self, from: data)
+    }
+    
+    func fetchAllLeagueMineral(
+        _ server: String,
+        _ division: String,
+        _ tier: String,
+        _ queue: String,
+        startPage: Int = 1,
+        maxPage: Int = 200
+    ) async throws -> LeagueEntriesDTO {
+        var all: LeagueEntriesDTO = []
+        var page = startPage
+        
+        while page <= maxPage {
+            let entries = try await fetchLeagueMineral(server, division, tier, queue, page)
+            
+            // Riot paging contract: empty array = done
+            if entries.isEmpty { break }
+            
+            all.append(contentsOf: entries)
+            page += 1
+        }
+        
+        return all
     }
 }
