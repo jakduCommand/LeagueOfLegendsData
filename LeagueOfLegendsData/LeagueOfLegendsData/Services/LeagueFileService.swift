@@ -12,7 +12,7 @@ var baseDirectory: URL {
         .appending(path: "LeagueData", directoryHint: .isDirectory)
 }
 
-struct LeagueFileService {
+actor LeagueFileService {
     
     // Check files recursivley and return all json URL in the directory
     func allJSONFiles(in dir: URL) throws -> [URL] {
