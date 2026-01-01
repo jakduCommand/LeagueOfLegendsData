@@ -113,7 +113,7 @@ final class LeagueViewModel: ObservableObject {
                 // empty array = no more pages
                 if entries.isEmpty { break }
                 
-                fileService.saveEntries(entries, server, division, tier, queue, "\(page)")
+                await fileService.saveEntries(entries, server, division, tier, queue, "\(page)")
                 page += 1
             } catch {
                 errorMessage = error.localizedDescription

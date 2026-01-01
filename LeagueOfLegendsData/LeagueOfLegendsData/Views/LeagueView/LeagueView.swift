@@ -106,10 +106,8 @@ struct LeagueView: View {
                 Button("Save") {
                     Task {
                         if isTopTier {
-                            guard let leagueListDTO else { return }
                             // TODO: save high tier(master - challenger)
                         } else {
-                            guard let leagueEntriesDTO else { return }
                             // TODO: save low tier(iron - diamond)
                         }
                     }
