@@ -60,28 +60,37 @@ actor LeagueFileService {
     
     // MARK: - Save top-tier (Master -> Challenger)
     func saveTopTierEntries (
-        _ entries: LeagueListDTO,
+        _ list: LeagueListDTO,
         _ server: String,
         _ tier: String,
         _ queue: String
-    ) {
+    ) throws {
         let fileName = "\(tier).json"
         
         let dir = leagueDataDirectory()
             .appending(path: "LeagueEntries", directoryHint: .isDirectory)
             .appending(path: server, directoryHint: .isDirectory)
             .appending(path: queue, directoryHint: .isDirectory)
-
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        
-        let url = dir.appending(path: fileName)
         
         do {
-            let data = try JSONEncoder().encode(entries)
-            try data.write(to: url, options: .atomic)
-            print("Saved top-tier entries to: \(url.path)")
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
-            print("Failed to save top-tier entries:", error)
+            throw FileSaveError.directoryCreationFailed
+        }
+        
+        let url = dir.appending(component: fileName)
+        
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(list.entries)
+        } catch {
+            throw FileSaveError.encodingFailed
+        }
+        
+        do {
+            try data.write(to: url)
+        } catch {
+            throw FileSaveError.writeFailed(url)
         }
     }
     
@@ -93,7 +102,7 @@ actor LeagueFileService {
         _ tier: String,
         _ queue: String,
         _ page: String
-    ) {
+    ) throws {
         let fileName = "\(page).json"
         
         let dir = leagueDataDirectory()
@@ -103,17 +112,32 @@ actor LeagueFileService {
             .appending(path: tier, directoryHint: .isDirectory)
             .appending(path: division, directoryHint: .isDirectory)
         
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            throw FileSaveError.directoryCreationFailed
+        }
         
         let url = dir.appending(path: fileName)
         
+        let data: Data
         do {
-            let data = try JSONEncoder().encode(entries)
-            try data.write(to: url, options: .atomic)
-            print("Saved entries to: \(url.path)")
+            data = try JSONEncoder().encode(entries)
         } catch {
-            print("Failed to save entries:", error)
+            throw FileSaveError.encodingFailed
+        }
+        
+        do {
+            try data.write(to: url, options: .atomic)
+        } catch {
+            throw FileSaveError.writeFailed(url)
         }
     }
+    
+    // MARK: - Save all tiers
+    func saveAllEntriees () async throws {
+        
+    }
+    
 }
 

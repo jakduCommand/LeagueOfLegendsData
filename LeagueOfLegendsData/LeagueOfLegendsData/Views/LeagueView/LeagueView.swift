@@ -12,19 +12,12 @@ struct LeagueView: View {
     @State private var selectedLeague: LeagueType = .challenger
     @State private var selectedQueue: RankQueue = .solo
     @State private var selectedServer: Server = .NA1
-    @State private var selectedTier: Tier = .challenger
+    @State private var selectedTier: TierSelection = .high(.challenger)
     @State private var selectedDivision: Division = .one
-    @State private var leagueListDTO: LeagueListDTO?
-    @State private var leagueEntriesDTO: LeagueEntriesDTO?
+
     @State private var pageText: String = "1"
     
     var page: Int { Int(pageText) ?? 1}
-    
-    var isTopTier: Bool {
-        selectedTier == .challenger ||
-        selectedTier == .grandMaster ||
-        selectedTier == .master
-    }
     
     var body: some View {
         
@@ -51,15 +44,15 @@ struct LeagueView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Picker("tier", selection: $selectedTier) {
-                        ForEach(Tier.allCases) { tier in
+                    Picker("Tier", selection: $selectedTier) {
+                        ForEach(TierSelection.allCases) { tier in
                             Text(tier.display).tag(tier)
                         }
                     }
                     .pickerStyle(.menu)
                 }
                 
-                if !isTopTier {
+                if case .low = selectedTier {
                     VStack(alignment: .leading, spacing: 4) {
                         Picker("Division", selection: $selectedDivision) {
                             ForEach(Division.allCases) { division in
@@ -70,7 +63,7 @@ struct LeagueView: View {
                     }
                 }
                 
-                if !isTopTier {
+                if case .low = selectedTier {
                     VStack(alignment: .leading, spacing: 4) {
                         TextField("Page", text: $pageText)
                             .textFieldStyle(.roundedBorder)
@@ -81,44 +74,22 @@ struct LeagueView: View {
                 
                 Button("Fetch") {
                     Task {
-                        leagueListDTO = nil
-                        leagueEntriesDTO = nil
-                        
-                        if isTopTier {
-                            leagueListDTO = try await leagueVM.getLeagueList(
-                                selectedServer.rawValue,
-                                selectedLeague.rawValue,
-                                selectedQueue.rawValue
-                            )
-                        } else {
-                            leagueEntriesDTO = try await leagueVM.getLeagueEntries (
-                                selectedServer.rawValue,
-                                selectedDivision.rawValue,
-                                selectedTier.rawValue,
-                                selectedQueue.rawValue,
-                                page
-                            )
-                        }
+                        await leagueVM.fetch(
+                            server: selectedServer,
+                            queue: selectedQueue,
+                            tier: selectedTier,
+                            division: selectedDivision,
+                            page: page
+                        )
                     }
                 }
                 .buttonStyle(.borderedProminent)
                 
                 Button("Save") {
                     Task {
-                        if isTopTier {
-                            // TODO: save high tier(master - challenger)
-                        } else {
-                            // TODO: save low tier(iron - diamond)
-                        }
+                        
                     }
                 }
-                
-                Button("Save All Pages") {
-                    Task {
-                        // TODO: Save all pages.
-                    }
-                }
-                .disabled(isTopTier)
             }
             .frame(minHeight: 70)
             .layoutPriority(1)
@@ -130,7 +101,7 @@ struct LeagueView: View {
             Spacer()
             // MARK: Display Results
             Group {
-                if let dto = leagueListDTO {
+                if let dto = leagueVM.leagueListDTO {
                     List {
                         Section("\(dto.tier) - \(dto.name)") {
                             Text("Server: \(selectedServer.rawValue) | Queue: \(dto.queue) | ID: \(dto.leagueId)")
@@ -145,7 +116,7 @@ struct LeagueView: View {
                     }
                     .listStyle(.plain)
                 }
-                else if let dto = leagueEntriesDTO {
+                else if let dto = leagueVM.leagueEntriesDTO {
                     List {
                         Section("\(selectedTier.display) - Page \(page)") {
                             ForEach(dto, id: \.puuid) { entry in

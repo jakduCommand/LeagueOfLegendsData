@@ -7,34 +7,34 @@
 import Foundation
 
 protocol LeagueServicing {
-    func fetchLeague(
-        _ server:String,
-        _ league: String,
-        _ queue: String
+    func fetchHighTier(
+        _ server: Server,
+        _ tier: HighTier,
+        _ queue: RankQueue
     ) async throws  -> LeagueListDTO
     
-    func fetchLeagueMineral(
-        _ server: String,
-        _ division: String,
-        _ tier: String,
-        _ queue: String,
+    func fetchLowTier(
+        _ server: Server,
+        _ division: Division,
+        _ tier: LowTier,
+        _ queue: RankQueue,
         _ page: Int
     ) async throws -> LeagueEntriesDTO
 }
 
 struct LeagueService: LeagueServicing {
     
-    func fetchLeague(
-        _ server: String,
-        _ league: String,
-        _ queue: String
+    func fetchHighTier(
+        _ server: Server,
+        _ tier: HighTier,
+        _ queue: RankQueue
     ) async throws -> LeagueListDTO {
         
         guard let apiKey = KeychainService.load() else {
             throw APIKeyError.missingKey
         }
         
-        guard let url = URL(string: "https://\(server).api.riotgames.com/lol/league/v4/\(league)/by-queue/\(queue)?api_key=\(apiKey)") else {
+        guard let url = URL(string: "https://\(server.rawValue).api.riotgames.com/lol/league/v4/\(tier.rawValue)/by-queue/\(queue.rawValue)?api_key=\(apiKey)") else {
             throw URLError(.badURL)
         }
         
@@ -56,11 +56,11 @@ struct LeagueService: LeagueServicing {
         return try decoder.decode(LeagueListDTO.self, from: data)
     }
     
-    func fetchLeagueMineral(
-        _ server: String,
-        _ division: String,
-        _ tier: String,
-        _ queue: String,
+    func fetchLowTier(
+        _ server: Server,
+        _ division: Division,
+        _ tier: LowTier,
+        _ queue: RankQueue,
         _ page: Int
     ) async throws -> LeagueEntriesDTO {
         
@@ -68,7 +68,7 @@ struct LeagueService: LeagueServicing {
             throw APIKeyError.missingKey
         }
         
-        guard let url = URL(string: "https://\(server).api.riotgames.com/lol/league/v4/entries/\(queue)/\(tier)/\(division)?page=\(page)&api_key=\(apiKey)") else {
+        guard let url = URL(string: "https://\(server.rawValue).api.riotgames.com/lol/league/v4/entries/\(queue.rawValue)/\(tier.rawValue)/\(division.rawValue)?page=\(page)&api_key=\(apiKey)") else {
             throw URLError(.badURL)
         }
         
@@ -89,29 +89,5 @@ struct LeagueService: LeagueServicing {
         
         let decoder = JSONDecoder()
         return try decoder.decode(LeagueEntriesDTO.self, from: data)
-    }
-    
-    func fetchAllLeagueMineral(
-        _ server: String,
-        _ division: String,
-        _ tier: String,
-        _ queue: String,
-        startPage: Int = 1,
-        maxPage: Int = 200
-    ) async throws -> LeagueEntriesDTO {
-        var all: LeagueEntriesDTO = []
-        var page = startPage
-        
-        while page <= maxPage {
-            let entries = try await fetchLeagueMineral(server, division, tier, queue, page)
-            
-            // Riot paging contract: empty array = done
-            if entries.isEmpty { break }
-            
-            all.append(contentsOf: entries)
-            page += 1
-        }
-        
-        return all
     }
 }

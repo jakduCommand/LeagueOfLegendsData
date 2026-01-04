@@ -11,6 +11,8 @@ import Combine
 final class LeagueViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isLoading = false
+    @Published var leagueListDTO: LeagueListDTO?
+    @Published var leagueEntriesDTO: LeagueEntriesDTO?
     
     private let service: LeagueServicing
     private let fileService: LeagueFileService
@@ -20,105 +22,109 @@ final class LeagueViewModel: ObservableObject {
         self.fileService = fileService
     }
     
-    // Fetch Challenger-Master tier user list
-    func getLeagueList(
-        _ server:String,
-        _ league: String,
-        _ queue: String
-    ) async throws -> LeagueListDTO? {
+    // Fectch player list of selected tier
+    func fetch (
+        server: Server,
+        queue: RankQueue,
+        tier: TierSelection,
+        division: Division?,
+        page: Int?
+    ) async {
+        // Rest UI state for a new request
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+        
+        leagueEntriesDTO = nil
+        leagueListDTO = nil
+        
         do {
-            self.isLoading = true
-            defer { self.isLoading = false }
             
-            let result = try await self.service.fetchLeague(server, league, queue)
-            
-            self.errorMessage = nil
-            
-            return result
+            switch tier {
+            case .high(let highTier):
+                let result = try await service.fetchHighTier(server, highTier, queue)
+                leagueListDTO = result
+                leagueEntriesDTO = nil
+                
+            case .low(let lowTier):
+                guard let division, let page else {
+                    errorMessage = "Division and page are required for low tiers."
+                    return
+                }
+                let result = try await service.fetchLowTier(server, division, lowTier, queue, page)
+                leagueEntriesDTO = result
+                leagueListDTO = nil
+            }
+        } catch is CancellationError {
+            // If user changes selection quickly, ignore cancellation.
         } catch APIKeyError.missingKey {
             errorMessage = "Please enter your API key in Settings."
         } catch {
             errorMessage = error.localizedDescription
         }
-        return nil
     }
     
-    // Fetch Iron-Diamond tier user list
-    func getLeagueEntries(
+    // MARK: - Save entries(Low tiers)
+    func saveEntriesLow(
         _ server: String,
         _ division: String,
         _ tier: String,
         _ queue: String,
         _ page: Int
-    ) async throws -> LeagueEntriesDTO? {
+    ) async {
+        guard let dto = leagueEntriesDTO else { return }
+        
         do {
-            self.isLoading = true
-            defer { self.isLoading = false }
-            
-            let result = try await self.service.fetchLeagueMineral (
+            try await fileService.saveEntries(
+                dto,
                 server,
                 division,
                 tier,
                 queue,
-                page
+                "\(page)"
             )
-            
-            self.errorMessage = nil
-            
-            return result
-        } catch APIKeyError.missingKey {
-            errorMessage = "Please enter your API kye in Settings."
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
-        return nil
     }
     
-    // MARK: - Save entries(Low tiers)
-    func saveEntries(
+    // MARK: - Save entries(High tiers)
+    func saveEntriesHigh(
         _ server: String,
-        _ division: String,
         _ tier: String,
         _ queue: String,
-        _ page: Int) {
+    ) async {
+        guard let dto = leagueListDTO else { return }
         
+        do {
+            try await fileService.saveTopTierEntries(
+               dto,
+               server,
+               tier,
+               queue
+            )
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
     
-    // MARK: - Save All pages for lower tiers
-    func saveAllPages(
-        _ server: String,
-        _ division: String,
-        _ tier: String,
-        _ queue: String
-    ) async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+    // MARK: - Save entries. Distinguish the tier and call
+    // Call appropirate save function for each tier
+    // saveEntriesHigh: Master - Challenger
+    // saveEntriesLow: Iron - Diamond
+    func save(
+        server: Server,
+        queue: RankQueue,
+        tier: TierSelection,
+        division: Division,
+        page: Int
+    ) {
         
-        var page = 1
-        let maxPages = 200
+    }
+    // MARK: - Save all entries
+    func saveAllEntries() async {
         
-        while page <= maxPages {
-            do {
-                guard let entries = try await getLeagueEntries(
-                    server,
-                    division,
-                    tier,
-                    queue,
-                    page
-                ) else {
-                    break
-                }
-                
-                // empty array = no more pages
-                if entries.isEmpty { break }
-                
-                await fileService.saveEntries(entries, server, division, tier, queue, "\(page)")
-                page += 1
-            } catch {
-                errorMessage = error.localizedDescription
-                break
-            }
-        }
     }
 }

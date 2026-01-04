@@ -129,6 +129,44 @@ enum Tier: String, CaseIterable, Identifiable {
     }
 }
 
+enum HighTier: String, CaseIterable, Identifiable {
+    case challenger = "challengerleagues"
+    case grandMaster = "grandmasterleagues"
+    case master = "masterleagues"
+    
+    var id: String { rawValue }
+    var display: String {
+        switch self{
+        case .challenger: return "Challenger"
+        case .grandMaster: return "GrandMaster"
+        case .master: return "Master"
+        }
+    }
+}
+
+enum LowTier: String, CaseIterable, Identifiable {
+    case diamond = "DIAMOND"
+    case emerald = "EMERALD"
+    case platinum = "PLATINUM"
+    case gold = "GOLD"
+    case silver = "SILVER"
+    case bronze = "BRONZE"
+    case iron = "IRON"
+    
+    var id: String { rawValue }
+    var display: String {
+        switch self{
+        case .diamond: return "Diamond"
+        case .emerald: return "Emerald"
+        case .platinum: return "Platinum"
+        case .gold: return "Gold"
+        case .silver: return "Silver"
+        case .bronze: return "Bronze"
+        case .iron: return "Iron"
+        }
+    }
+}
+
 enum Division: String, CaseIterable, Identifiable {
     case one = "I"
     case two = "II"
@@ -176,3 +214,9 @@ struct LeagueEntryDTO: Codable {
     var freshBlood: Bool
     var hotStreak: Bool
 }
+
+// Low tier dictionary
+typealias LowTierDictionary = [String:[String:[String:[String:[String:[LeagueEntriesDTO]]]]]]
+
+// High tier dictionary
+typealias HighTierDictionary = [String:[String:[LeagueListDTO]]]
