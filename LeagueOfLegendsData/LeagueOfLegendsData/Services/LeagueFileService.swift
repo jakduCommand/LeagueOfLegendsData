@@ -59,18 +59,19 @@ actor LeagueFileService {
     }
     
     // MARK: - Save top-tier (Master -> Challenger)
-    func saveTopTierEntries (
+    func saveHighTier (
         _ list: LeagueListDTO,
-        _ server: String,
-        _ tier: String,
-        _ queue: String
+        _ server: Server,
+        _ tier: HighTier,
+        _ queue: RankQueue
     ) throws {
-        let fileName = "\(tier).json"
+        let fileName = "\(tier.rawValue).json"
         
         let dir = leagueDataDirectory()
             .appending(path: "LeagueEntries", directoryHint: .isDirectory)
-            .appending(path: server, directoryHint: .isDirectory)
-            .appending(path: queue, directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: queue.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
         
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -95,22 +96,22 @@ actor LeagueFileService {
     }
     
     // MARK: - Save lower tiers (Iron -> Diamond)
-    func saveEntries(
+    func saveLowTier (
         _ entries: LeagueEntriesDTO,
-        _ server: String,
-        _ division: String,
-        _ tier: String,
-        _ queue: String,
-        _ page: String
+        _ server: Server,
+        _ division: Division,
+        _ tier: LowTier,
+        _ queue: RankQueue,
+        _ page: Int
     ) throws {
         let fileName = "\(page).json"
         
         let dir = leagueDataDirectory()
             .appending(path: "LeagueEntries", directoryHint: .isDirectory)
-            .appending(path: server, directoryHint: .isDirectory)
-            .appending(path: queue, directoryHint: .isDirectory)
-            .appending(path: tier, directoryHint: .isDirectory)
-            .appending(path: division, directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: queue.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+            .appending(path: division.rawValue, directoryHint: .isDirectory)
         
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

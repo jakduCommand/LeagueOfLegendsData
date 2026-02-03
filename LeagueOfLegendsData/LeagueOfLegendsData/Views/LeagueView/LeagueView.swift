@@ -87,7 +87,12 @@ struct LeagueView: View {
                 
                 Button("Save") {
                     Task {
-                        
+                        await leagueVM.save(
+                            server: selectedServer,
+                            queue: selectedQueue,
+                            tier: selectedTier,
+                            division: selectedDivision,
+                            page: page)
                     }
                 }
             }

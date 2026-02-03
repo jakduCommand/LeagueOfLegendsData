@@ -11,8 +11,10 @@ import Combine
 final class LeagueViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isLoading = false
+    @Published var isSaving = false
     @Published var leagueListDTO: LeagueListDTO?
     @Published var leagueEntriesDTO: LeagueEntriesDTO?
+    @Published var progressText: String?
     
     private let service: LeagueServicing
     private let fileService: LeagueFileService
@@ -64,52 +66,6 @@ final class LeagueViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Save entries(Low tiers)
-    func saveEntriesLow(
-        _ server: String,
-        _ division: String,
-        _ tier: String,
-        _ queue: String,
-        _ page: Int
-    ) async {
-        guard let dto = leagueEntriesDTO else { return }
-        
-        do {
-            try await fileService.saveEntries(
-                dto,
-                server,
-                division,
-                tier,
-                queue,
-                "\(page)"
-            )
-            errorMessage = nil
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
-    // MARK: - Save entries(High tiers)
-    func saveEntriesHigh(
-        _ server: String,
-        _ tier: String,
-        _ queue: String,
-    ) async {
-        guard let dto = leagueListDTO else { return }
-        
-        do {
-            try await fileService.saveTopTierEntries(
-               dto,
-               server,
-               tier,
-               queue
-            )
-            errorMessage = nil
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
     // MARK: - Save entries. Distinguish the tier and call
     // Call appropirate save function for each tier
     // saveEntriesHigh: Master - Challenger
@@ -118,13 +74,79 @@ final class LeagueViewModel: ObservableObject {
         server: Server,
         queue: RankQueue,
         tier: TierSelection,
-        division: Division,
-        page: Int
-    ) {
+        division: Division?,
+        page: Int?
+    ) async {
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
         
+        do {
+            switch tier {
+                
+            case .high(let highTier):
+                guard let data = leagueListDTO else {
+                    errorMessage = "No data to save high tier entries"
+                    return
+                }
+                
+                try await fileService.saveHighTier (
+                   data,
+                   server,
+                   highTier,
+                   queue
+                )
+                
+            case .low(let lowTier):
+                guard let data = leagueEntriesDTO else {
+                    errorMessage = "No data to save low tier entries"
+                    return
+                }
+                
+                guard let division, let page else {
+                    errorMessage = "Division and page are required for low tiers."
+                    return
+                }
+                
+                try await fileService.saveLowTier (data, server, division, lowTier, queue, page)
+            }
+        } catch is CancellationError {
+            // If user changes selection quickly, ignore cancellation.
+        } catch APIKeyError.missingKey {
+            errorMessage = "Please enter your API key in Settings."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
+    
+
     // MARK: - Save all entries
-    func saveAllEntries() async {
+    func saveAll() {
+        isSaving = true
+        errorMessage = nil
+        let engine = LeagueSaveAllEngine(service: service, fileService: fileService)
         
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.isSaving = false }
+            
+            do {
+                try await engine.saveAll(
+                    servers: Server.allCases,
+                    queues: RankQueue.allCases,
+                    lowPages: 1...10
+                ) { [weak self] done, total in
+                    await MainActor.run {
+                        self?.progressText = "\(done)/\(total)"
+                    }
+                }
+            } catch is CancellationError {
+                
+            } catch APIKeyError.missingKey {
+                self.errorMessage = "Please enter your API key in Settings."
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
     }
 }
