@@ -46,6 +46,7 @@ actor LeagueSaveAllEngine {
     
     private let service: LeagueServicing
     private let fileService: LeagueFileService
+    private let limiter = RiotRateLimiter()
     
     init(service: LeagueServicing, fileService: LeagueFileService) {
         self.service = service
@@ -102,11 +103,13 @@ actor LeagueSaveAllEngine {
     private func run(_ job: FetchJob) async throws {
         switch job.tier {
         case .high(let highTier):
+            try await limiter.acquire()
             let dto = try await service.fetchHighTier(job.server, highTier, job.queue)
             try await fileService.saveHighTier(dto, job.server, highTier, job.queue)
             
         case .low(let lowTier):
             guard let division = job.division, let page = job.page else { return }
+            try await limiter.acquire()
             let dto = try await service.fetchLowTier(job.server, division, lowTier, job.queue, page)
             try await fileService.saveLowTier(dto, job.server, division, lowTier, job.queue, page)
         }
