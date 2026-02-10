@@ -95,6 +95,12 @@ struct LeagueView: View {
                             page: page)
                     }
                 }
+                
+                Button("Save All") {
+                    Task {
+                        leagueVM.saveAll()
+                    }
+                }
             }
             .frame(minHeight: 70)
             .layoutPriority(1)

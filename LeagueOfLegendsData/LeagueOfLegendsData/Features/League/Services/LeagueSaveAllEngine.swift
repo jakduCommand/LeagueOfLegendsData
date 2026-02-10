@@ -71,7 +71,7 @@ actor LeagueSaveAllEngine {
         servers: [Server],
         queues: [RankQueue],
         lowPages: ClosedRange<Int>,
-        onProgress: @Sendable (Int, Int) async -> Void
+        onProgress: @MainActor @Sendable (Int, Int) async -> Void
     ) async throws {
         
         let jobs = makeJobs(servers: servers, queues: queues, lowPages: lowPages)
