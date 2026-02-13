@@ -14,11 +14,6 @@ var baseDirectory: URL {
 
 actor LeagueFileService {
     
-    enum LeagueTierFormat {
-        case upper
-        case lower
-    }
-    
     // Check files recursivley and return all json URL in the directory
     func allJSONFiles(in dir: URL) throws -> [URL] {
         let fm = FileManager.default
@@ -53,11 +48,11 @@ actor LeagueFileService {
     }
     
     // Extract PUUIDs with map for each tier's file format
-    func getPuuids(from file: URL, format: LeagueTierFormat) throws -> [String] {
+    func getPuuids(from file: URL, format: TierSelection) throws -> [String] {
         switch format {
-        case .upper:
+        case .high:
             return try decodeUpperTier(from: file).entries.map(\.puuid)
-        case .lower:
+        case .low:
             return try decodeLowerTier(from: file).map(\.puuid)
         }
     }
@@ -149,11 +144,5 @@ actor LeagueFileService {
             throw FileSaveError.writeFailed(url)
         }
     }
-    
-    // MARK: - Save all tiers
-    func saveAllEntriees () async throws {
-        
-    }
-    
 }
 
