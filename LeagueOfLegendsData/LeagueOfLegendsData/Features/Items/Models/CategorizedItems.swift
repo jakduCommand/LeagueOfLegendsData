@@ -5,7 +5,7 @@
 //  Created by Jungwoon Ko on 11/3/25.
 //
 
-nonisolated struct CategorizedItems {
+struct CategorizedItems {
     var items: [Int: ItemDetail] = [:]
     var boots: Set<Int> = []
     var trinkets: Set<Int> = []

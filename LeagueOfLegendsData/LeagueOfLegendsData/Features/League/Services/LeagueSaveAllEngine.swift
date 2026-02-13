@@ -83,11 +83,10 @@ actor LeagueSaveAllEngine {
         // - Prevent disk write contention
         // - Keep memory usage predictable
         for job in jobs {
+            if Task.isCancelled { return }
             try await run(job)
             done += 1
             await onProgress(done, total)
-            
-            if Task.isCancelled { return }
         }
     }
     

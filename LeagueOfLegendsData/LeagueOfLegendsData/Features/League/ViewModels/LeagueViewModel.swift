@@ -14,11 +14,13 @@ final class LeagueViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var leagueListDTO: LeagueListDTO?
     @Published var leagueEntriesDTO: LeagueEntriesDTO?
-    @Published var progressText: String?
+    @Published var done = 0
+    @Published var total = 0
     
+    private var task: Task<Void, Never>?
     private let service: LeagueServicing
     private let fileService: LeagueFileService
-    
+
     init(service: LeagueServicing, fileService: LeagueFileService) {
         self.service = service
         self.fileService = fileService
@@ -119,34 +121,44 @@ final class LeagueViewModel: ObservableObject {
         }
     }
     
-
-    // MARK: - Save all entries
-    func saveAll() {
-        isSaving = true
-        errorMessage = nil
+    func start() {
+        guard task == nil else { return }
+        
         let engine = LeagueSaveAllEngine(service: service, fileService: fileService)
         
-        Task { [weak self] in
-            guard let self else { return }
-            defer { self.isSaving = false }
+        errorMessage = nil
+        isSaving = true
+        done = 0
+        total = 0
+        
+        task = Task { @MainActor in
+            defer {
+                self.isSaving = false
+                self.task = nil
+            }
             
             do {
-                try await engine.saveAll(
+                try await engine.saveAll (
                     servers: Server.allCases,
                     queues: RankQueue.allCases,
                     lowPages: 1...10
-                ) { [weak self] done, total in
-                    await MainActor.run {
-                        self?.progressText = "\(done)/\(total)"
-                    }
+                ) { done, total in
+                    self.done = done
+                    self.total = total
                 }
             } catch is CancellationError {
                 
             } catch APIKeyError.missingKey {
-                self.errorMessage = "Please enter your API key in Settings."
+                await MainActor.run { self.errorMessage = "Please enter your API key in Settings."}
             } catch {
-                self.errorMessage = error.localizedDescription
+                await MainActor.run { self.errorMessage = error.localizedDescription}
             }
         }
+    }
+    
+    func cancel() {
+        task?.cancel()
+        isSaving = false
+        task = nil
     }
 }

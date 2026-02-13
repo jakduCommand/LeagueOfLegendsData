@@ -97,9 +97,23 @@ struct LeagueView: View {
                 }
                 
                 Button("Save All") {
-                    Task {
-                        leagueVM.saveAll()
-                    }
+                    leagueVM.start()
+                }
+                .disabled(leagueVM.isSaving)
+                
+                if leagueVM.isSaving {
+                    ProgressView(
+                        value: Double(leagueVM.done),
+                        total: Double(max(leagueVM.total, 1))
+                    )
+                    .frame(width: 140)
+                    
+                    Text("\(leagueVM.done)/\(leagueVM.total)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    
+                    Button("Cancel") { leagueVM.cancel() }
+                        .font(.footnote)
                 }
             }
             .frame(minHeight: 70)
