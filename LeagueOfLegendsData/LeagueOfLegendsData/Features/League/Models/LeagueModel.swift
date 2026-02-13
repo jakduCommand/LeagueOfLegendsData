@@ -68,14 +68,12 @@ enum LeagueType: String, CaseIterable, Identifiable {
 enum RankQueue: String, CaseIterable, Identifiable {
     case solo = "RANKED_SOLO_5x5"
     case flexSR = "RANKED_FLEX_SR"
-    case flexTT = "RANKED_FLEX_TT"
     
     var id: String { rawValue }
     var display: String {
         switch self {
         case .solo: return "Solo Queue"
         case .flexSR: return "Flex SR"
-        case .flexTT: return "Flex TT"
         }
     }
 }
@@ -180,9 +178,9 @@ enum Division: String, CaseIterable, Identifiable {
 // Master, Grand master, Challenger
 struct LeagueListDTO: Codable {
     var tier: String
-    var leagueId: String
-    var queue: String
-    var name: String
+    var leagueId: String?
+    var queue: String?
+    var name: String?
     var entries: [LeagueItemDTO]
 }
 

@@ -55,7 +55,7 @@ actor RiotRateLimiter {
                 waitSeconds = max(waitSeconds, (oldestBurst + burstWindow) - now)
             }
             
-            if longUsed >= burstCount {
+            if longUsed >= longCount {
                 // the oldest timestamp in the last 120s determines when we can proceed
                 let oldestLong = granted[0]
                 waitSeconds = max(waitSeconds, (oldestLong + longWindow) - now)

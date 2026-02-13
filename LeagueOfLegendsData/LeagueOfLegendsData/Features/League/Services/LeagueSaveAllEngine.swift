@@ -68,13 +68,13 @@ actor LeagueSaveAllEngine {
     /// - The loop cooperatively checks `Task.isCancelled`
     /// - Execution stops gracefully without leaving partial state
     func saveAll (
-        servers: [Server],
+        server: Server,
         queues: [RankQueue],
         lowPages: ClosedRange<Int>,
         onProgress: @MainActor @Sendable (Int, Int) async -> Void
     ) async throws {
         
-        let jobs = makeJobs(servers: servers, queues: queues, lowPages: lowPages)
+        let jobs = makeJobs(server: server, queues: queues, lowPages: lowPages)
         let total = jobs.count
         var done = 0
         
@@ -124,29 +124,25 @@ actor LeagueSaveAllEngine {
     ///
     ///  This method is intentionally determinisitc and side-effect free.
     private func makeJobs (
-        servers: [Server],
+        server: Server,
         queues: [RankQueue],
         lowPages: ClosedRange<Int>
     ) -> [FetchJob] {
         var jobs: [FetchJob] = []
         
         // High tiers
-        for server in servers {
-            for queue in queues {
-                for high in HighTier.allCases {
-                    jobs.append(.init(server: server, queue: queue, tier: .high(high), division: nil, page: nil))
-                }
+        for queue in queues {
+            for high in HighTier.allCases {
+                jobs.append(.init(server: server, queue: queue, tier: .high(high), division: nil, page: nil))
             }
         }
         
         // Low tiers
-        for server in servers {
-            for queue in queues {
-                for low in LowTier.allCases {
-                    for division in Division.allCases {
-                        for page in lowPages {
-                            jobs.append(.init(server: server, queue: queue, tier: .low(low), division: division, page: page))
-                        }
+        for queue in queues {
+            for low in LowTier.allCases {
+                for division in Division.allCases {
+                    for page in lowPages {
+                        jobs.append(.init(server: server, queue: queue, tier: .low(low), division: division, page: page))
                     }
                 }
             }

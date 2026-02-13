@@ -74,7 +74,7 @@ struct LeagueView: View {
                 
                 Button("Fetch") {
                     Task {
-                        await leagueVM.fetch(
+                        leagueVM.startFetch(
                             server: selectedServer,
                             queue: selectedQueue,
                             tier: selectedTier,
@@ -97,7 +97,7 @@ struct LeagueView: View {
                 }
                 
                 Button("Save All") {
-                    leagueVM.start()
+                    leagueVM.start(server: selectedServer)
                 }
                 .disabled(leagueVM.isSaving)
                 
@@ -125,18 +125,11 @@ struct LeagueView: View {
             
             Spacer()
             // MARK: Display Results
-            Group {
+            VStack {
                 if let dto = leagueVM.leagueListDTO {
                     List {
-                        Section("\(dto.tier) - \(dto.name)") {
-                            Text("Server: \(selectedServer.rawValue) | Queue: \(dto.queue) | ID: \(dto.leagueId)")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            
-                            
-                            ForEach(dto.entries, id: \.puuid) { entry in
-                                LeagueRow(entry: entry)
-                            }
+                        ForEach(dto.entries, id: \.puuid) { entry in
+                            LeagueRow(entry: entry)
                         }
                     }
                     .listStyle(.plain)
@@ -161,6 +154,7 @@ struct LeagueView: View {
                         .font(.system(size: 24))
                         .foregroundStyle(Color(.systemRed))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .textSelection(.enabled)
                 }
                 else if leagueVM.isLoading {
                     ProgressView()

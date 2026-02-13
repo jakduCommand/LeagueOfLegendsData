@@ -18,12 +18,21 @@ final class LeagueViewModel: ObservableObject {
     @Published var total = 0
     
     private var task: Task<Void, Never>?
+    private var fetchTask: Task<Void, Never>?
     private let service: LeagueServicing
     private let fileService: LeagueFileService
 
     init(service: LeagueServicing, fileService: LeagueFileService) {
         self.service = service
         self.fileService = fileService
+    }
+    
+    func startFetch(server: Server, queue: RankQueue, tier: TierSelection, division: Division?, page: Int?) {
+        fetchTask?.cancel()
+        fetchTask = Task { [weak self] in
+            guard let self else { return }
+            await self.fetch(server: server, queue: queue, tier: tier, division: division, page: page)
+        }
     }
     
     // Fectch player list of selected tier
@@ -121,7 +130,7 @@ final class LeagueViewModel: ObservableObject {
         }
     }
     
-    func start() {
+    func start(server: Server) {
         guard task == nil else { return }
         
         let engine = LeagueSaveAllEngine(service: service, fileService: fileService)
@@ -139,7 +148,7 @@ final class LeagueViewModel: ObservableObject {
             
             do {
                 try await engine.saveAll (
-                    servers: Server.allCases,
+                    server: server,
                     queues: RankQueue.allCases,
                     lowPages: 1...10
                 ) { done, total in
@@ -150,6 +159,8 @@ final class LeagueViewModel: ObservableObject {
                 
             } catch APIKeyError.missingKey {
                 await MainActor.run { self.errorMessage = "Please enter your API key in Settings."}
+            } catch APIError.invalidURL(let badString) {
+                await MainActor.run { self.errorMessage = "Invalid URL: \(badString)"}
             } catch {
                 await MainActor.run { self.errorMessage = error.localizedDescription}
             }

@@ -24,6 +24,14 @@ protocol LeagueServicing {
 
 struct LeagueService: LeagueServicing {
     
+    private let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.urlCache = nil
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.httpMaximumConnectionsPerHost = 1
+        return URLSession(configuration: config)
+    }()
+    
     func fetchHighTier(
         _ server: Server,
         _ tier: HighTier,
@@ -35,20 +43,28 @@ struct LeagueService: LeagueServicing {
         }
         
         guard let url = URL(string: "https://\(server.rawValue).api.riotgames.com/lol/league/v4/\(tier.rawValue)/by-queue/\(queue.rawValue)?api_key=\(apiKey)") else {
-            throw URLError(.badURL)
+            throw APIError.invalidURL("https://\(server.rawValue).api.riotgames.com/lol/league/v4/\(tier.rawValue)/by-queue/\(queue.rawValue)?api_key=\(apiKey)")
         }
         
         var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpMethod = "GET"
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15", forHTTPHeaderField: "User-Agent")
         request.setValue("en-US,en;q=0.", forHTTPHeaderField: "Accept-Language")
         request.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Accept-Charset")
         request.setValue("https://developer.riotgames.com", forHTTPHeaderField: "Origin")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        
+        print("Status Code:", httpResponse.statusCode, " URL: ", url)
+        
+        if !(200...299).contains(httpResponse.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "No body"
+            print("Error body:", body)
             throw URLError(.badServerResponse)
         }
         
@@ -69,21 +85,30 @@ struct LeagueService: LeagueServicing {
         }
         
         guard let url = URL(string: "https://\(server.rawValue).api.riotgames.com/lol/league/v4/entries/\(queue.rawValue)/\(tier.rawValue)/\(division.rawValue)?page=\(page)&api_key=\(apiKey)") else {
-            throw URLError(.badURL)
+            throw APIError.invalidURL("https://\(server.rawValue).api.riotgames.com/lol/league/v4/entries/\(queue.rawValue)/\(tier.rawValue)/\(division.rawValue)?page=\(page)&api_key=\(apiKey)")
         }
         
         print(url)
         
         var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpMethod = "GET"
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15", forHTTPHeaderField: "User-Agent")
         request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
         request.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Accept-Charset")
         request.setValue("https://developer.riotgames.com", forHTTPHeaderField: "Origin")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        
+        print("Status Code:", httpResponse.statusCode, " URL: ", url)
+        
+        if !(200...299).contains(httpResponse.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "No body"
+            print("Error body:", body)
             throw URLError(.badServerResponse)
         }
         
