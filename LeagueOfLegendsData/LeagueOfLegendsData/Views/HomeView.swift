@@ -20,6 +20,8 @@ struct HomeView: View {
                     .tag("Champions")
                 Text("Players")
                     .tag("Players")
+                Text("Matches")
+                    .tag("Matches")
                 Text("Files")
                     .tag("Files")
                 Text("Test")
@@ -36,6 +38,8 @@ struct HomeView: View {
                 ChampionListView(version: version)
             case "Players":
                 LeagueView()
+            case "Matches":
+                MatchView()
             case "Files":
                 FileManagerView()
             case "Test":
