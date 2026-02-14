@@ -28,9 +28,3 @@ struct ContentView: View {
         }
     }
 }
-
-#Preview {
-    ContentView()
-        .environmentObject(VersionViewModel(service: VersionService()))
-        .environmentObject(ItemViewModel(service: ItemService()))
-}

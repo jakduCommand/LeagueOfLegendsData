@@ -36,9 +36,9 @@ actor LeagueFileService {
     }
     
     // For Master+ tier. Decodes entries
-    func decodeUpperTier(from file: URL) throws -> LeagueListDTO {
+    func decodeUpperTier(from file: URL) throws -> [LeagueItemDTO] {
         let data = try Data(contentsOf: file)
-        return try JSONDecoder().decode(LeagueListDTO.self, from: data)
+        return try JSONDecoder().decode([LeagueItemDTO].self, from: data)
     }
     
     // For Iron - Diamond tier. Decodes entries
@@ -50,11 +50,50 @@ actor LeagueFileService {
     // Extract PUUIDs with map for each tier's file format
     func getPuuids(from file: URL, format: TierSelection) throws -> [String] {
         switch format {
-        case .high:
-            return try decodeUpperTier(from: file).entries.map(\.puuid)
-        case .low:
+        case .high(_):
+            return try decodeUpperTier(from: file).map(\.puuid)
+        case .low(_):
             return try decodeLowerTier(from: file).map(\.puuid)
         }
+    }
+    
+    // Recursively extract PUUIDs under a root file and skip bad files
+    func getPuuidsRecursively (
+        from root: URL,
+        format: TierSelection
+    ) throws -> [String] {
+        
+        let fm = FileManager.default
+        var all: [String] = []
+        
+        // If it's already a file, just attempt decode and return
+        if !root.hasDirectoryPath {
+            return (try? getPuuids(from: root, format: format)) ?? []
+        }
+        
+        guard let enumerator = fm.enumerator (
+            at: root,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+        
+        for case let url as URL in enumerator {
+            // Only .json files
+            guard url.pathExtension.lowercased() == "json" else { continue }
+            
+            // Make sure it's a regular file
+            guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey]),
+                  values.isRegularFile == true else { continue }
+            
+            // Try decode - skip if it fails
+            if let puuids = try? getPuuids(from: url, format: format) {
+                all.append(contentsOf: puuids)
+            }
+        }
+        
+        return all
     }
     
     private func leagueDataDirectory() -> URL {
@@ -143,6 +182,19 @@ actor LeagueFileService {
         } catch {
             throw FileSaveError.writeFailed(url)
         }
+    }
+    
+    // MARK: - Get Directory
+    func getDirectory(
+        server: Server,
+        tier: TierSelection
+    ) -> URL {
+        return leagueDataDirectory()
+            .appending(path: "LeagueEntries", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: RankQueue.solo.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+ 
     }
 }
 

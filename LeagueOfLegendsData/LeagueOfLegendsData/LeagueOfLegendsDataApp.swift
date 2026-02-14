@@ -23,6 +23,7 @@ struct LeagueOfLegendsDataApp: App {
         service: LeagueService(),
         fileService: LeagueFileService()
     )
+    @StateObject private var matchVM = MatchViewModel(matchIDService: MatchIDService())
     @StateObject private var fmVM = FileManagerViewModel()
     
     var body: some Scene {
@@ -32,6 +33,7 @@ struct LeagueOfLegendsDataApp: App {
                 .environmentObject(itemVM)
                 .environmentObject(championListVM)
                 .environmentObject(leagueVM)
+                .environmentObject(matchVM)
                 .environmentObject(fmVM)
         }
         .commands {

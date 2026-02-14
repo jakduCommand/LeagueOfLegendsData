@@ -8,14 +8,14 @@ import Foundation
 
 protocol MatchIDServicing {
     func fetchMatchIDs (
-        _ puuid: String,
-        _ server: String,
-        _ startTime: Int?,
-        _ endTime: Int?,
-        _ queue: Int?,
-        _ type: String?,
-        _ start: Int?,
-        _ count: Int?
+        puuid: String,
+        server: Server,
+        startTime: Int?,
+        endTime: Int?,
+        queue: Int?,
+        type: String?,
+        start: Int?,
+        count: Int?
         
     ) async throws -> [String]
 }
@@ -33,15 +33,15 @@ protocol MatchIDServicing {
  * - Count: Defaults to 20. Valid values: 0 to 100. number of match ids to return.
  */
 struct MatchIDService: MatchIDServicing {
-    private func region (for platform: String) -> String {
-        switch platform.uppercased() {
-        case "NA1", "BR1", "LA1", "LA2", "OC1":
+    private func region (for platform: Server) -> String {
+        switch platform {
+        case .NA1, .BR1, .LA1, .LA2, .OC1:
             return "americas"
-        case "KR", "JP1":
+        case .KR, .JP1:
             return "asia"
-        case "EUN1", "EUW1", "TR1", "RU":
+        case .EUN1, .EUW1, .TR1, .RU:
             return "europe"
-        case "SG2", "PH2", "TW2", "TH2", "VN2", "ID1":
+        case .SG2, .TW2, .VN2:
             return "sea"
         default:
             return "americas"
@@ -49,14 +49,14 @@ struct MatchIDService: MatchIDServicing {
     }
     
     func fetchMatchIDs (
-        _ puuid: String,
-        _ server: String,
-        _ startTime: Int?,
-        _ endTime: Int?,
-        _ queue: Int?,
-        _ type: String?,
-        _ start: Int?,
-        _ count: Int?
+        puuid: String,
+        server: Server,
+        startTime: Int?,
+        endTime: Int?,
+        queue: Int?,
+        type: String?,
+        start: Int?,
+        count: Int?
     ) async throws -> [String] {
         
         guard let apiKey = KeychainService.load() else {
