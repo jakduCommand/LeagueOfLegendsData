@@ -48,6 +48,7 @@ struct MatchView: View {
                 }
                 
                 Button("Save All") {
+                    
                 }
                 
             }
@@ -71,8 +72,8 @@ struct MatchView: View {
                 }
             } else if let matchIDs = matchVM.matchIDs {
                 List {
-                    ForEach(matchIDs, id: \.self) { matchID in
-                        Text("Match ID: \(matchID)")
+                    ForEach(Array(matchIDs.enumerated()), id: \.element) { index, matchID in
+                        Text("\(index + 1). Match ID: \(matchID)")
                             .textSelection(.enabled)
                     }
                 }
