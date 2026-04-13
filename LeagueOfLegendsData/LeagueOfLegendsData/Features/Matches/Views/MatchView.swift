@@ -44,7 +44,9 @@ struct MatchView: View {
                 .buttonStyle(.borderedProminent)
                 
                 Button("Save") {
-                    
+                    Task {
+                        await matchVM.save(selectedServer, selectedTier)
+                    }
                 }
                 
                 Button("Save All") {

@@ -73,6 +73,33 @@ final class MatchViewModel: ObservableObject {
         }
     }
     
+    func save(
+        _ server: Server,
+        _ tier: TierSelection
+    ) async {
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+        
+        guard let matchIds = self.matchIDs else {
+            errorMessage = "No match IDs"
+            return
+        }
+        
+        do {
+            try await fileService.saveMatchID(
+                matchIds,
+                server,
+                tier
+            )
+        } catch is CancellationError {
+            // If user changes selection quickly, ignore cancellation.
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+    }
+    
     // MARK: helper
     func getDirectoryURL(server: Server, tier: TierSelection) async -> URL {
         return await fileService.getDirectory(server: server, tier: tier)

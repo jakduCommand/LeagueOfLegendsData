@@ -13,7 +13,31 @@ var baseDirectory: URL {
 }
 
 actor LeagueFileService {
+    // MARK: - Directory
+    private func leagueDataDirectory() -> URL {
+        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let folder = base.appendingPathComponent("LeagueData", isDirectory: true)
+        
+        // Make sure if folder exists
+        if !FileManager.default.fileExists(atPath: folder.path) {
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        }
+        return folder
+    }
     
+    func getDirectory(
+        server: Server,
+        tier: TierSelection
+    ) -> URL {
+        return leagueDataDirectory()
+            .appending(path: "LeagueEntries", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: RankQueue.solo.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+ 
+    }
+    
+    // MARK: - Read
     // Check files recursivley and return all json URL in the directory
     func allJSONFiles(in dir: URL) throws -> [URL] {
         let fm = FileManager.default
@@ -35,6 +59,7 @@ actor LeagueFileService {
         return results
     }
     
+    // MARK: - Decode
     // For Master+ tier. Decodes entries
     func decodeUpperTier(from file: URL) throws -> [LeagueItemDTO] {
         let data = try Data(contentsOf: file)
@@ -46,7 +71,7 @@ actor LeagueFileService {
         let data = try Data(contentsOf: file)
         return try JSONDecoder().decode(LeagueEntriesDTO.self, from: data)
     }
-    
+    // MARK: - Extract
     // Extract PUUIDs with map for each tier's file format
     func getPuuids(from file: URL, format: TierSelection) throws -> [String] {
         switch format {
@@ -96,18 +121,8 @@ actor LeagueFileService {
         return all
     }
     
-    private func leagueDataDirectory() -> URL {
-        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let folder = base.appendingPathComponent("LeagueData", isDirectory: true)
-        
-        // Make sure if folder exists
-        if !FileManager.default.fileExists(atPath: folder.path) {
-            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        }
-        return folder
-    }
-    
-    // MARK: - Save top-tier (Master -> Challenger)
+    // MARK: - Save League Entries
+    // Save top tiers
     func saveHighTier (
         _ list: LeagueListDTO,
         _ server: Server,
@@ -144,7 +159,7 @@ actor LeagueFileService {
         }
     }
     
-    // MARK: - Save lower tiers (Iron -> Diamond)
+    // Save lower tier
     func saveLowTier (
         _ entries: LeagueEntriesDTO,
         _ server: Server,
@@ -184,17 +199,31 @@ actor LeagueFileService {
         }
     }
     
-    // MARK: - Get Directory
-    func getDirectory(
-        server: Server,
-        tier: TierSelection
-    ) -> URL {
-        return leagueDataDirectory()
-            .appending(path: "LeagueEntries", directoryHint: .isDirectory)
+    // MARK: - Save Match IDs
+    func saveMatchID (
+        _ matchIDs: [String],
+        _ server: Server,
+        _ tier: TierSelection
+    ) throws {
+        let fileName = "matchIDs.json"
+        
+        let dir = leagueDataDirectory()
+            .appending(path: "Matches", directoryHint: .isDirectory)
             .appending(path: server.rawValue, directoryHint: .isDirectory)
-            .appending(path: RankQueue.solo.rawValue, directoryHint: .isDirectory)
             .appending(path: tier.display, directoryHint: .isDirectory)
- 
+        
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        
+        let url = dir.appending(path: fileName)
+        
+        do {
+            let data = try JSONEncoder().encode(matchIDs)
+            try data.write(to: url, options: .atomic)
+            print("Saved match IDs to: \(url.path)")
+        } catch {
+            print("Failed to save match IDs:", error)
+            throw error
+        }
     }
 }
 
