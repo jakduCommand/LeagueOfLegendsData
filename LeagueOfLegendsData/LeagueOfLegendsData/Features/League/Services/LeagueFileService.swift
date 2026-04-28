@@ -71,6 +71,13 @@ actor LeagueFileService {
         let data = try Data(contentsOf: file)
         return try JSONDecoder().decode(LeagueEntriesDTO.self, from: data)
     }
+    
+    func decodeMatchId(from file: URL) throws -> [String] {
+        let data = try Data(contentsOf: file)
+        
+        return try JSONDecoder().decode([String].self, from: data)
+    }
+    
     // MARK: - Extract
     // Extract PUUIDs with map for each tier's file format
     func getPuuids(from file: URL, format: TierSelection) throws -> [String] {
@@ -121,6 +128,19 @@ actor LeagueFileService {
         return all
     }
     
+    func getMatchIDs(server: Server, tier: TierSelection) throws -> [String] {
+        let fileName = "matchIDs.json"
+        
+        let dir = leagueDataDirectory()
+            .appending(path: "Matches", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+        
+        let url = dir.appending(path: fileName)
+        
+        return try decodeMatchId(from: url)
+    }
+    
     // MARK: - Save League Entries
     // Save top tiers
     func saveHighTier (
@@ -169,7 +189,7 @@ actor LeagueFileService {
         _ page: Int
     ) throws {
         let fileName = "\(page).json"
-        
+ 
         let dir = leagueDataDirectory()
             .appending(path: "LeagueEntries", directoryHint: .isDirectory)
             .appending(path: server.rawValue, directoryHint: .isDirectory)
@@ -222,6 +242,47 @@ actor LeagueFileService {
             print("Saved match IDs to: \(url.path)")
         } catch {
             print("Failed to save match IDs:", error)
+            throw error
+        }
+    }
+    
+    // MARK: - Save MatchDto and Timeline
+    func saveMatchDtoTimeline (
+        _ matchDto: MatchDto,
+        _ timelineDto: TimelineDto,
+        _ server: Server,
+        _ tier: TierSelection
+    ) throws {
+        let matchID = matchDto.metadata.matchId
+        let matchDtoFileName = "matchDto_\(matchID).json"
+        let timelineFileName = "timelineDto_\(matchID).json"
+        
+        let matchDtoDir = leagueDataDirectory()
+            .appending(path: "MatchDto", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+        
+        let timelineDtoDir = leagueDataDirectory()
+            .appending(path: "TimelineDto", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+        
+        try FileManager.default.createDirectory(at: matchDtoDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: timelineDtoDir, withIntermediateDirectories: true)
+        
+        let matchDtoURL = matchDtoDir.appending(path: matchDtoFileName)
+        let timelineDtoURL = timelineDtoDir.appending(path: timelineFileName)
+        
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            
+            let matchDtoData = try encoder.encode(matchDto)
+            let timelineDtoData = try encoder.encode(timelineDto)
+            
+            try matchDtoData.write(to: matchDtoURL, options: .atomic)
+            try timelineDtoData.write(to: timelineDtoURL, options: .atomic)
+        } catch {
             throw error
         }
     }

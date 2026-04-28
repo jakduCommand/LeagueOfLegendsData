@@ -10,6 +10,7 @@ enum FileSaveError: LocalizedError {
     case encodingFailed
     case directoryCreationFailed
     case writeFailed(URL)
+    case readingFailed(URL)
     
     var errorDescription: String? {
         switch self {
@@ -19,6 +20,8 @@ enum FileSaveError: LocalizedError {
             return "Failed to create save directory."
         case .writeFailed(let url):
             return "Failed to write file to \(url.lastPathComponent)."
+        case .readingFailed(let url):
+            return "Failed to read file from \(url.lastPathComponent)."
         }
     }
 }

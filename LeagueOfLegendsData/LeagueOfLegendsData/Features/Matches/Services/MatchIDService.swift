@@ -18,6 +18,16 @@ protocol MatchIDServicing {
         count: Int?
         
     ) async throws -> [String]
+    
+    func fetchMatchDto (
+        matchID: String,
+        server: Server
+    ) async throws -> MatchDto
+    
+    func fetchTimelineDto (
+        matchID: String,
+        server: Server
+    ) async throws -> TimelineDto
 }
 
 /**
@@ -80,6 +90,7 @@ struct MatchIDService: MatchIDServicing {
         guard let url = components.url else {
             throw URLError(.badURL)
         }
+        
         let (data, response) = try await URLSession.shared.data(from: url)
         
         guard let httpsResp = response as? HTTPURLResponse, (200...299).contains(httpsResp.statusCode) else {
@@ -92,5 +103,91 @@ struct MatchIDService: MatchIDServicing {
         }
         
         return try JSONDecoder().decode([String].self, from: data)
+    }
+    
+    func fetchMatchDto(matchID: String, server: Server) async throws -> MatchDto {
+        guard let apiKey = KeychainService.load() else {
+            throw APIKeyError.missingKey
+        }
+        
+        let region = self.region(for: server)
+        guard let url = URL(string: "https://\(region).api.riotgames.com/lol/match/v5/matches/\(matchID)?api_key=\(apiKey)") else {
+            throw APIError.invalidURL("https://americas.api.riotgames.com/lol/match/v5/matches/\(matchID)?api_key=\(apiKey)")
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpsResp = response as? HTTPURLResponse, (200...299).contains(httpsResp.statusCode) else {
+            if let badResp = (response as? HTTPURLResponse) {
+                let url = badResp.url ?? URL(string: "Unknwon URL")!
+                throw NetworkError.badResponse(url: url, statusCode: badResp.statusCode)
+            } else {
+                throw URLError(.badServerResponse)
+            }
+        }
+        
+        do {
+            return try JSONDecoder().decode(MatchDto.self, from: data)
+        } catch let error as DecodingError {
+            printDecodingError(error, data: data)
+            throw error
+        }
+    }
+    
+    func fetchTimelineDto(matchID: String, server: Server) async throws -> TimelineDto {
+        guard let apiKey = KeychainService.load() else {
+            throw APIKeyError.missingKey
+        }
+        
+        let region = self.region(for: server)
+        guard let url = URL(string: "https://\(region).api.riotgames.com/lol/match/v5/matches/\(matchID)/timeline?api_key=\(apiKey)") else {
+            throw APIError.invalidURL("https://americas.api.riotgames.com/lol/match/v5/matches/\(matchID)/timeline?api_key=\(apiKey)")
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpsResp = response as? HTTPURLResponse, (200...299).contains(httpsResp.statusCode) else {
+            if let badResp = (response as? HTTPURLResponse) {
+                let url = badResp.url ?? URL(string: "unknwon URL")!
+                throw NetworkError.badResponse(url: url, statusCode: badResp.statusCode)
+            } else {
+                throw URLError(.badServerResponse)
+            }
+        }
+        
+        do {
+            return try JSONDecoder().decode(TimelineDto.self, from: data)
+        } catch let error as DecodingError {
+            printDecodingError(error, data: data)
+            throw error
+        }
+        
+    }
+    
+    func printDecodingError(_ error: DecodingError, data: Data) {
+        switch error {
+        case .keyNotFound(let key, let context):
+            print("Missiing Key: \(key.stringValue)")
+            print("Path:", context.codingPath.map { $0.stringValue }.joined(separator: " -> "))
+            print("Description:", context.debugDescription)
+            
+        case .typeMismatch(let type, let context):
+            print("Type mistmatch for type: \(type)")
+            print("Path:", context.codingPath.map { $0.stringValue }.joined(separator: " -> "))
+            print("Description:", context.debugDescription)
+            
+        case .valueNotFound(let type, let context):
+            print("Missing value for type: \(type)")
+            print("Path:", context.codingPath.map { $0.stringValue }.joined(separator: " -> "))
+            print("Description", context.debugDescription)
+            
+        case .dataCorrupted(let context):
+            print("Data corrupted")
+            print("Path:", context.codingPath.map { $0.stringValue }.joined(separator: " -> "))
+            print("Description", context.debugDescription)
+            
+        @unknown default:
+            print("Unknown decoding error")
+        }
     }
 }

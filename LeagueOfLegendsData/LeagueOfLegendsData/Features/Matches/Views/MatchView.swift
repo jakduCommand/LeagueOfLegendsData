@@ -12,6 +12,7 @@ struct MatchView: View {
     @State private var selectedLeague: LeagueType = .challenger
     @State private var selectedServer: Server = .NA1
     @State private var selectedTier: TierSelection = .high(.challenger)
+    @State private var matchIDcount: String = "1"
     
     var body: some View {
         VStack(spacing: 0) {
@@ -42,25 +43,67 @@ struct MatchView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(matchVM.isSaving || matchVM.isLoading)
                 
                 Button("Save") {
                     Task {
                         await matchVM.save(selectedServer, selectedTier)
                     }
                 }
+                .disabled(matchVM.isSaving || matchVM.isLoading)
                 
                 Button("Save All") {
-                    
+                    Task {
+                        await matchVM.saveAll(server: selectedServer)
+                    }
                 }
+                .disabled(matchVM.isSaving || matchVM.isLoading)
                 
             }
-            .frame(minHeight: 70)
+            .layoutPriority(1)
+            .padding()
+            .background(.ultraThinMaterial)
+            
+            
+            if matchVM.isSaving && matchVM.saveAllTotal > 0 {
+                VStack(alignment: .leading, spacing: 8) {
+                    ProgressView(value: matchVM.saveAllProgress)
+                        .progressViewStyle(.linear)
+                    
+                    Text("\(matchVM.saveAllLabel) \(matchVM.saveAllCurrent)/\(matchVM.saveAllTotal)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+            }
+            
+            Divider()
+            
+            FlowLayout {
+                VStack {
+                    Text("Fetch match data and timeline")
+                    TextField("Max 100", text: $matchIDcount)
+                        .textFieldStyle(.roundedBorder)
+                }
+                
+                Button("Fetch and Save") {
+                    Task {
+                        await matchVM.getMatchTimelineDto(
+                            server: selectedServer,
+                            tier: selectedTier,
+                            count: matchIDcount
+                        )
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                
+            }
             .layoutPriority(1)
             .padding()
             .background(.ultraThinMaterial)
             
             Divider()
-            
             Spacer()
             
             // MARK: Display Results
@@ -72,9 +115,9 @@ struct MatchView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .textSelection(.enabled)
                 }
-            } else if let matchIDs = matchVM.matchIDs {
+            } else if matchVM.hasMatchIDs {
                 List {
-                    ForEach(Array(matchIDs.enumerated()), id: \.element) { index, matchID in
+                    ForEach(Array(matchVM.matchIDs.enumerated()), id: \.element) { index, matchID in
                         Text("\(index + 1). Match ID: \(matchID)")
                             .textSelection(.enabled)
                     }

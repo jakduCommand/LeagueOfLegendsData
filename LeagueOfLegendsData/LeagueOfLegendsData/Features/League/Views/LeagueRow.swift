@@ -13,6 +13,7 @@ struct LeagueRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("PUUID: \(entry.puuid)")
                 .font(.caption)
+                .textSelection(.enabled)
             
             HStack {
                 Text("LP: \(entry.leaguePoints)")
