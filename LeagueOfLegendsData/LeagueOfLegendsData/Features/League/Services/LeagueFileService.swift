@@ -59,6 +59,134 @@ actor LeagueFileService {
         return results
     }
     
+    // Read matchDto and timelineDto
+    func readMatchDtoTimelineDto (
+        _ matchID: String? = nil,
+        _ server: Server? = nil,
+        _ tier: TierSelection? = nil
+    ) throws -> [(MatchDto, TimelineDto)] {
+
+        // 1. Specific match
+        if let matchID, let server, let tier {
+            return [
+                try readSingleMatchDtoTimelineDto(
+                    matchID: matchID,
+                    server: server,
+                    tier: tier
+                )
+            ]
+        }
+
+        // 2. Selected server + tier
+        if let server, let tier {
+            return try readAllMatchDtoTimelineDto(server: server, tier: tier)
+        }
+        
+        // 3. No matchId, server, tier => read everything
+        return try readAllMatchDtoTimelineDto()
+        
+    }
+    
+    private func readSingleMatchDtoTimelineDto (
+        matchID: String,
+        server: Server,
+        tier: TierSelection
+    ) throws -> (MatchDto, TimelineDto) {
+        
+        let matchDtoURL = leagueDataDirectory()
+            .appending(path: "MatchDto", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+            .appending(path: "matchDto_\(matchID).json", directoryHint: .notDirectory)
+        
+        let timelineDtoURL = leagueDataDirectory()
+            .appending(path: "TimelineDto", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+            .appending(path: "timelineDto_\(matchID).json", directoryHint: .notDirectory)
+        
+        let decoder = JSONDecoder()
+        
+        let matchDto = try decoder.decode(
+            MatchDto.self,
+            from: try Data(contentsOf: matchDtoURL)
+        )
+        
+        let timelineDto = try decoder.decode(
+            TimelineDto.self,
+            from: try Data(contentsOf: timelineDtoURL)
+        )
+        
+        return (matchDto, timelineDto)
+    }
+    
+    private func readAllMatchDtoTimelineDto(
+        server: Server,
+        tier: TierSelection
+    ) throws -> [(MatchDto, TimelineDto)] {
+        let matchDtoDir = leagueDataDirectory()
+            .appending(path: "MatchDto", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+        
+        let timelineDtoDir = leagueDataDirectory()
+            .appending(path: "TimelineDto", directoryHint: .isDirectory)
+            .appending(path: server.rawValue, directoryHint: .isDirectory)
+            .appending(path: tier.display, directoryHint: .isDirectory)
+        
+        var result = [(MatchDto, TimelineDto)]()
+        
+        let matchIds = try getMatchIDs(server: server, tier: tier)
+        let decoder = JSONDecoder()
+        
+        for matchId in matchIds {
+            do {
+                let matchDtoURL = matchDtoDir
+                    .appending(path: "matchDto_\(matchId).json", directoryHint: .notDirectory)
+                let timelineDtoURL = timelineDtoDir
+                    .appending(path: "timelineDto_\(matchId).json", directoryHint: .notDirectory)
+                
+                let matchDto = try decoder.decode(
+                    MatchDto.self,
+                    from: try Data(contentsOf: matchDtoURL)
+                )
+                
+                let timelineDto = try decoder.decode(
+                    TimelineDto.self,
+                    from: try Data(contentsOf: timelineDtoURL)
+                )
+                
+                result.append((matchDto, timelineDto))
+            } catch {
+                print("Failed to read \(matchId): ", error)
+                continue
+            }
+        }
+        return result
+    }
+    
+    private func readAllMatchDtoTimelineDto() throws -> [(MatchDto, TimelineDto)] {
+        
+        var result: [(MatchDto, TimelineDto)] = []
+        
+        for server in Server.allCases {
+            for tier in TierSelection.allCases {
+                do {
+                    let pairs = try readAllMatchDtoTimelineDto(
+                        server: server,
+                        tier: tier
+                    )
+                    result.append(contentsOf:pairs)
+                } catch {
+                    print("Failed toe read\(server) \(tier): ", error)
+                    continue
+                }
+            }
+        }
+        
+        return result
+    }
+    
     // MARK: - Decode
     // For Master+ tier. Decodes entries
     func decodeUpperTier(from file: URL) throws -> [LeagueItemDTO] {

@@ -17,15 +17,6 @@ nonisolated struct ItemCategorizer {
             
             let tags = Set(detail.tags ?? [])
             
-            // Boots: tag "Boots"
-            if tags.contains("Boots"),
-               detail.gold.total < 1400,
-               detail.gold.total > 300 {
-                if isPurchasableNow(detail, id: id) {
-                    result.boots.insert(id)
-                }
-            }
-            
             // AdvancedBoots: hardcoding by name
             if detail.name.localizedCaseInsensitiveContains("Armored Advance")
                 || detail.name.localizedCaseInsensitiveContains("Chainlaced Crushers")
@@ -33,12 +24,23 @@ nonisolated struct ItemCategorizer {
                 || detail.name.localizedCaseInsensitiveContains("Forever Forward")
                 || detail.name.localizedCaseInsensitiveContains("Gunmetal Greaves")
                 || detail.name.localizedCaseInsensitiveContains("Spellslinger's Shoes")
-                || detail.name.localizedCaseInsensitiveContains("Swiftmarch") {
-                if isPurchasableNow(detail, id: id) && !result.boots.contains(id){
+                || detail.name.localizedCaseInsensitiveContains("Swiftmarch")
+                || detail.name.localizedCaseInsensitiveContains("Immortal Path"){
+                if isPurchasableNow(detail, id: id) {
                     result.advancedBoots.insert(id)
                 }
-                
             }
+            
+            // Boots: tag "Boots"
+            if tags.contains("Boots"),
+               detail.gold.total < 1400,
+               detail.gold.total > 300 {
+                if isPurchasableNow(detail, id: id) && !result.advancedBoots.contains(id) {
+                    result.boots.insert(id)
+                }
+            }
+            
+            
             
             if detail.name.localizedStandardContains("Amplifying Tome")
                 || detail.name.localizedStandardContains("B. F. Sword")

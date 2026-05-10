@@ -5,7 +5,7 @@
 //  Created by Jungwoon Ko on 11/3/25.
 //
 
-struct CategorizedItems {
+struct CategorizedItems: Codable {
     var items: [Int: ItemDetail] = [:]
     var boots: Set<Int> = []
     var trinkets: Set<Int> = []
@@ -17,9 +17,6 @@ struct CategorizedItems {
     var advancedBoots: Set<Int> = []
     var basic: Set<Int> = []
     var epic: Set<Int> = []
-}
-
-extension CategorizedItems {
     var allCategories: [String: Set<Int>] {
         [
             "Boots": boots,
@@ -31,5 +28,17 @@ extension CategorizedItems {
             "Basic": basic,
             "Epic": epic
         ]
+    }
+    
+    func isBoots (_ itemId: Int) -> Bool {
+        return boots.contains(itemId)
+    }
+    
+    func isStarters (_ itemId: Int) -> Bool {
+        return starters.contains(itemId)
+    }
+    
+    func isLegendary (_ itemId: Int) -> Bool {
+        return legendary.contains(itemId)
     }
 }

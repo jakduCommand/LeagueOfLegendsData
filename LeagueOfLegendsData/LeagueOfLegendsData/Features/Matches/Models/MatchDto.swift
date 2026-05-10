@@ -19,13 +19,26 @@ struct MetadataDto: Codable {
 struct InfoDto: Codable {
     var endOfGameResult: String
     var gameDuration: Int
+    var queueId: Int
+    var gameVersion: String
     var participants: [ParticipantDto]
 }
 
 struct ParticipantDto: Codable {
+    var participantId: Int
+    var teamId: Int
+    
     var championId: Int
     var championName: String
+    
+    var win: Bool
+    
+    var summoner1Id: Int
+    var summoner2Id: Int
+    
+    var teamPosition: String
     var individualPosition: String
+    
     var item0: Int
     var item1: Int
     var item2: Int
@@ -33,10 +46,13 @@ struct ParticipantDto: Codable {
     var item4: Int
     var item5: Int
     var item6: Int
+    
     var perks: PerksDto
-    var teamPosition: String
-    var win: Bool
+    
     var kills: Int
+    var deaths: Int
+    var assists: Int
+    
     var goldEarned: Int
     var goldSpent: Int
 }

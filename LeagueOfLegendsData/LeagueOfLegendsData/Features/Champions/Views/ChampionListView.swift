@@ -8,11 +8,54 @@ import SwiftUI
 
 struct ChampionListView: View {
     @EnvironmentObject var championListVM: ChampionListViewModel
+    
+    @State private var selectedServer: Server? = nil
+    @State private var selectedTier: TierSelection? = nil
+    @State private var matchId: String = ""
     let version: String
     
     private let columns = [GridItem(.adaptive(minimum: 60))]
     
     var body: some View {
+        VStack {
+            Text("Analyze data and save it")
+            
+            FlowLayout {
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("Server", selection: $selectedServer) {
+                        Text("").tag(nil as Server?)
+                        
+                        ForEach(Server.allCases) { server in
+                            Text(server.rawValue).tag(server)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("Tier", selection: $selectedTier) {
+                        Text("").tag(nil as TierSelection?)
+                        
+                        ForEach(TierSelection.allCases) { tier in
+                            Text(tier.display).tag(tier)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Match ID", text: $matchId)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 200)
+                }
+                
+                
+            }
+        }
+        .layoutPriority(1)
+        .padding()
+        .background(.ultraThinMaterial)
+        
         Group {
             if championListVM.isLoading {
                 ProgressView("Loading Champion list...")
